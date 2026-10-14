@@ -8,7 +8,7 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js"
   },
-    "engines": {
+  "engines": {
     "node": "24.x"
   },
   "repository": {
@@ -24,6 +24,8 @@
   },
   "homepage": "https://github.com/rafaelvalverdedev/Syszap#readme",
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.3",
+    "dotenv": "^18.0.8",
     "express": "^5.3.0"
   },
   "devDependencies": {
