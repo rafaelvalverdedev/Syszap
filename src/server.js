@@ -340,6 +340,34 @@ app.get('/', (req, res) => {
   res.send('WhatsApp Agendador está funcionando!');
 });
 
+
+
+app.get('/api/cron/verificar', (req, res) => {
+  const segredo = process.env.CRON_SECRET;
+  const autorizacao = req.get('authorization');
+
+  if (!segredo) {
+    return res.status(500).json({
+      sucesso: false,
+      mensagem: 'CRON_SECRET não configurado no servidor.'
+    });
+  }
+
+  if (autorizacao !== `Bearer ${segredo}`) {
+    return res.status(401).json({
+      sucesso: false,
+      mensagem: 'Não autorizado.'
+    });
+  }
+
+  return res.json({
+    sucesso: true,
+    mensagem: 'Cron do Syszap conectado!',
+    horario: new Date().toISOString()
+  });
+});
+
+
 // ==========================================
 // 8. TESTAR CONEXÃO COM O SUPABASE
 // GET /api/teste-banco

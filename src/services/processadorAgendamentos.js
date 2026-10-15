@@ -1,8 +1,6 @@
 
 const supabase = require('../config/supabase');
 
-// Busca agendamentos vencidos sem alterar seus status.
-// Útil para consulta e diagnóstico.
 async function buscarAgendamentosPendentes() {
   const agora = new Date().toISOString();
 
@@ -17,37 +15,39 @@ async function buscarAgendamentosPendentes() {
     .limit(10);
 
   if (error) {
-    console.error(
-      'Erro ao buscar agendamentos pendentes:',
-      error.message
-    );
-
-    throw new Error(
-      'Não foi possível buscar os agendamentos pendentes.'
-    );
+    console.error('Erro ao buscar agendamentos:', error.message);
+    throw new Error('Não foi possível buscar os agendamentos.');
   }
 
   return data;
 }
 
-// Reserva os agendamentos vencidos por meio da função SQL.
-// A função SQL deve existir no Supabase com o nome
-// reservar_agendamentos_pendentes.
+async function recuperarAgendamentosTravados() {
+  const { data, error } = await supabase.rpc(
+    'recuperar_agendamentos_travados'
+  );
+
+  if (error) {
+    console.error('Erro ao recuperar agendamentos:', error.message);
+    throw new Error('Não foi possível recuperar os agendamentos.');
+  }
+
+  return data;
+}
+
 async function reservarAgendamentosPendentes() {
+  // Primeiro, recupera registros que ficaram presos.
+  await recuperarAgendamentosTravados();
+
+  // Depois, reserva os agendamentos vencidos.
   const { data, error } = await supabase.rpc(
     'reservar_agendamentos_pendentes',
     { quantidade: 10 }
   );
 
   if (error) {
-    console.error(
-      'Erro ao reservar agendamentos:',
-      error.message
-    );
-
-    throw new Error(
-      'Não foi possível reservar os agendamentos pendentes.'
-    );
+    console.error('Erro ao reservar agendamentos:', error.message);
+    throw new Error('Não foi possível reservar os agendamentos.');
   }
 
   return data;
@@ -55,5 +55,6 @@ async function reservarAgendamentosPendentes() {
 
 module.exports = {
   buscarAgendamentosPendentes,
+  recuperarAgendamentosTravados,
   reservarAgendamentosPendentes
 };
