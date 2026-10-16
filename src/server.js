@@ -3,6 +3,7 @@ require('dotenv').config();
 
 const express = require('express');
 const supabase = require('./config/supabase');
+const { enviarMensagemWhatsApp } = require('./services/whatsapp');
 
 const {
   buscarAgendamentosPendentes,
@@ -468,6 +469,54 @@ app.get('/api/diagnostico-whatsapp', async (req, res) => {
 }
 });
 
+
+
+// ==========================================
+// TESTE CONTROLADO DE ENVIO WHATSAPP
+// POST /api/teste-envio-whatsapp
+// Não lê nem altera a fila de agendamentos.
+// Requer Authorization: Bearer <CRON_SECRET>
+// Envia somente uma mensagem fixa para o número de teste autorizado.
+// ==========================================
+app.post('/api/teste-envio-whatsapp', async (req, res) => {
+  const segredo = process.env.CRON_SECRET;
+  const autorizacao = req.get('authorization');
+
+  if (!segredo) {
+    return res.status(500).json({
+      sucesso: false,
+      mensagem: 'CRON_SECRET não configurado no servidor.'
+    });
+  }
+
+  if (autorizacao !== `Bearer ${segredo}`) {
+    return res.status(401).json({
+      sucesso: false,
+      mensagem: 'Não autorizado.'
+    });
+  }
+
+  try {
+    const envio = await enviarMensagemWhatsApp({
+      destinatario: '5574991947955',
+      mensagem: 'Teste de envio do Syszap: a integração com a WhatsApp Cloud API está funcionando.'
+    });
+
+    return res.json({
+      sucesso: true,
+      mensagem: 'A Meta aceitou a mensagem de teste.',
+      destinatario: '+55 74 99194-7955',
+      id_mensagem_whatsapp: envio.idMensagem
+    });
+  } catch (error) {
+    console.error('Falha no teste de envio WhatsApp:', error.message);
+    return res.status(502).json({
+      sucesso: false,
+      mensagem: 'A API do WhatsApp recusou o envio de teste.',
+      detalhe: String(error.message || 'Erro desconhecido').slice(0, 500)
+    });
+  }
+});
 
 // ==========================================
 // 9. INICIAR SERVIDOR LOCAL
