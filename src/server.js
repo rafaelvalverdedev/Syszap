@@ -458,11 +458,14 @@ app.get('/api/diagnostico-whatsapp', async (req, res) => {
       qualidade: resultado.quality_rating || null
     });
   } catch (error) {
-    return res.status(500).json({
-      sucesso: false,
-      mensagem: 'Falha ao consultar a API da Meta.'
-    });
-  }
+  console.error('Diagnóstico WhatsApp:', error.name, error.message);
+
+  return res.status(500).json({
+    sucesso: false,
+    mensagem: 'Falha ao consultar a API da Meta.',
+    tipo_erro: error.name || 'Erro desconhecido'
+  });
+}
 });
 
 
