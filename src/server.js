@@ -418,6 +418,54 @@ app.get('/api/teste-banco', async (req, res) => {
   }
 });
 
+
+app.get('/api/diagnostico-whatsapp', async (req, res) => {
+  const token = process.env.WHATSAPP_ACCESS_TOKEN;
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+
+  if (!token || !phoneNumberId) {
+    return res.status(500).json({
+      sucesso: false,
+      mensagem: 'Variáveis do WhatsApp não configuradas.'
+    });
+  }
+
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/v23.0/${phoneNumberId}?fields=display_phone_number,verified_name,quality_rating`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    const resultado = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        sucesso: false,
+        mensagem: 'A Meta recusou a consulta.',
+        erro: resultado.error?.message || 'Erro não identificado',
+        codigo: resultado.error?.code || null
+      });
+    }
+
+    return res.json({
+      sucesso: true,
+      numero: resultado.display_phone_number || null,
+      nome_verificado: resultado.verified_name || null,
+      qualidade: resultado.quality_rating || null
+    });
+  } catch (error) {
+    return res.status(500).json({
+      sucesso: false,
+      mensagem: 'Falha ao consultar a API da Meta.'
+    });
+  }
+});
+
+
 // ==========================================
 // 9. INICIAR SERVIDOR LOCAL
 // ==========================================
