@@ -6,7 +6,8 @@ const supabase = require('./config/supabase');
 
 const {
   buscarAgendamentosPendentes,
-  reservarAgendamentosPendentes
+  reservarAgendamentosPendentes,
+  processarAgendamentos
 } = require('./services/processadorAgendamentos');
 
 const app = express();
@@ -342,7 +343,7 @@ app.get('/', (req, res) => {
 
 
 
-app.get('/api/cron/verificar', (req, res) => {
+app.get('/api/cron/verificar', async (req, res) => {
   const segredo = process.env.CRON_SECRET;
   const autorizacao = req.get('authorization');
 
@@ -360,11 +361,24 @@ app.get('/api/cron/verificar', (req, res) => {
     });
   }
 
-  return res.json({
-    sucesso: true,
-    mensagem: 'Cron do Syszap conectado!',
-    horario: new Date().toISOString()
-  });
+  try {
+    const processamento = await processarAgendamentos();
+
+    return res.json({
+      sucesso: true,
+      mensagem: 'Verificação do Syszap concluída.',
+      horario: new Date().toISOString(),
+      processamento
+    });
+  } catch (error) {
+    console.error('Erro no processamento do cron:', error.message);
+
+    return res.status(500).json({
+      sucesso: false,
+      mensagem: 'Não foi possível processar os agendamentos.',
+      detalhe: error.message
+    });
+  }
 });
 
 
